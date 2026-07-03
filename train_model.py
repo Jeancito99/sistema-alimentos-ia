@@ -6,6 +6,8 @@ from sklearn.preprocessing import StandardScaler
 from keras.models import Model
 from keras.layers import Input, Dense, Conv2D, Flatten, concatenate
 
+
+
 # 1. Simulación de datos
 def crear_dataset_dummy(n=1000):
     data = {
