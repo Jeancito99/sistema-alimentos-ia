@@ -8,6 +8,6 @@ node_modules/
 models/*.h5
 *.h5
 
-data/
+
 __pycache__/
 .env
