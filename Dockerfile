@@ -26,7 +26,7 @@ RUN python train_model.py
 COPY . .
 
 # 5. Comando de inicio
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000"]
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar el código y modelos
