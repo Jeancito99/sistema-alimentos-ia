@@ -6,12 +6,12 @@ import numpy as np
 from PIL import Image
 import joblib
 import io
-
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://sistema-alimentos-laravel.onrender.com"],  # En producción reemplazar por el dominio de Laravel
+    # allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,7 +26,7 @@ scaler = None
 def get_model():
     global model
     if model is None:
-        model = tf.keras.models.load_model("models/food_model.h5")
+        model = tf.keras.models.load_model("models/food_model.h5",compile=False)
     return model
 
 
@@ -66,9 +66,10 @@ async def predict(
     pred = modelo.predict([img_data, iot_data], verbose=0)
 
     dias = float(pred[0][0])
-
+    dias= 0 if dias <= 0 else dias
     return {
         "dias_restantes": dias,
         "estado": "Consumible" if dias > 2 else "Desechar"
     }
+
 # Correr con: uvicorn app.main:app --reload

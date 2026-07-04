@@ -1,13 +1,15 @@
+# Entornos virtuales
 venv/
 .venv/
 env/
 
+# Dependencias frontend/backend
 vendor/
 node_modules/
 
-models/*.h5
-*.h5
-
-
+# Caché de Python
 __pycache__/
+*.py[cod]
+
+# Variables de entorno
 .env
