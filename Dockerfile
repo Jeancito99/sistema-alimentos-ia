@@ -28,4 +28,4 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 
 # Comando para iniciar con Gunicorn (más robusto que Uvicorn solo)
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
