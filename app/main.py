@@ -15,8 +15,8 @@ app = FastAPI()
 #     }
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://sistema-alimentos-laravel.onrender.com"],  # En producción reemplazar por el dominio de Laravel
-    # allow_origins=["*"],
+    # allow_origins=["https://sistema-alimentos-laravel.onrender.com"],  # En producción reemplazar por el dominio de Laravel
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
