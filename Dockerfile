@@ -11,8 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Instalar dependencias de Python
 COPY requirements.txt .
-COPY requirements.txt .
-COPY train_model.py .
 COPY app/ ./app/
 
 # 2. Instalar dependencias
