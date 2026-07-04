@@ -1,26 +1,25 @@
-# Usa una imagen base de Python
+# Imagen base de Python
 FROM python:3.10-slim
 
-# Directorio de trabajo
+# Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para Keras/TensorFlow
+# Instalar dependencias del sistema necesarias para TensorFlow
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar dependencias de Python
+# Copiar primero el archivo de dependencias
 COPY requirements.txt .
-COPY app/ ./app/
 
-# 2. Instalar dependencias
+# Instalar las dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-
-# 4. Copiar el resto del código si es necesario
+# Copiar el resto del proyecto
 COPY . .
-# Variable importante para Render
+
+# Evita que Python almacene la salida en búfer
 ENV PYTHONUNBUFFERED=1
 
-# Comando para iniciar con Gunicorn (más robusto que Uvicorn solo)
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
+# Iniciar la aplicación con Uvicorn
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
