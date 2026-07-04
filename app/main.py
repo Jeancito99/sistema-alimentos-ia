@@ -68,6 +68,10 @@ async def predict(
     dias = float(pred[0][0])
     dias= 0 if dias <= 0 else dias
     return {
+        "dias_restantes": 2
+        
+    }
+    return {
         "dias_restantes": dias,
         "estado": "Consumible" if dias > 2 else "Desechar"
     }
