@@ -8,3 +8,5 @@ joblib
 python-multipart
 scikit-learn
 h5py
+pandas
+opencv-python
