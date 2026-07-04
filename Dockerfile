@@ -18,9 +18,6 @@ COPY app/ ./app/
 # 2. Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 3. GENERAR EL MODELO (Aquí ocurre la magia)
-# Esto ejecuta tu script y creará la carpeta /models y el archivo .h5 dentro de la imagen
-RUN python train_model.py
 
 # 4. Copiar el resto del código si es necesario
 COPY . .
