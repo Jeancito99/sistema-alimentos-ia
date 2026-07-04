@@ -1,5 +1,5 @@
 # Usa una imagen base de Python
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 # Directorio de trabajo
 WORKDIR /app
@@ -28,4 +28,4 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 
 # Comando para iniciar con Gunicorn (más robusto que Uvicorn solo)
-CMD ["sh", "-c", "gunicorn main:app -k uvicorn.workers.UvicornWorker --workers 1 --bind 0.0.0.0:$PORT"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]

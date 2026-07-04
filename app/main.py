@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
-from keras.models import load_model
+import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
@@ -12,7 +12,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-model = load_model("models/food_model.h5")
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        model =  tf.keras.models.load_model("model.h5")
+    return model
 
 def preprocess_image(image_bytes):
     img = Image.open(io.BytesIO(image_bytes)).resize((128, 128))
