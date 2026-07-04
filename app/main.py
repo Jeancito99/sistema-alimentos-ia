@@ -7,12 +7,12 @@ from PIL import Image
 import joblib
 import io
 app = FastAPI()
-@app.post("/predict")
-def home():
-    return {
-        "status": "ok",
-        "api": "Sistema de Predicción de Vida Útil"
-    }
+# @app.post("/predict")
+# def home():
+#     return {
+#         "status": "ok",
+#         "api": "Sistema de Predicción de Vida Útil"
+#     }
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://sistema-alimentos-laravel.onrender.com"],  # En producción reemplazar por el dominio de Laravel
