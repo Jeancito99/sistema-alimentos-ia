@@ -7,7 +7,12 @@ from PIL import Image
 import joblib
 import io
 app = FastAPI()
-
+@app.get("/")
+def home():
+    return {
+        "status": "ok",
+        "api": "Sistema de Predicción de Vida Útil"
+    }
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://sistema-alimentos-laravel.onrender.com"],  # En producción reemplazar por el dominio de Laravel
@@ -45,39 +50,32 @@ def preprocess_image(image_bytes):
     img_array = np.array(img, dtype=np.float32) / 255.0
     return np.expand_dims(img_array, axis=0)
 
+
 @app.post("/predict")
-async def predict(data: ...): # lo que tengas ahí
-    print("--- RECIBÍ UNA PETICIÓN EN PYTHON ---")
-    # ... resto de tu código ...
-# @app.post("/predict")
-# async def predict(
-#     file: UploadFile = File(...),
-#     temp: float = Form(...),
-#     hum: float = Form(...)
-# ):
+async def predict(
+    file: UploadFile = File(...),
+    temp: float = Form(...),
+    hum: float = Form(...)
+):
+    # Obtener modelo y scaler
+    modelo = get_model()
+    scaler = get_scaler()
+
+    # Procesar imagen
+    img_data = preprocess_image(await file.read())
+
+    # Escalar datos IoT
+    iot_data = scaler.transform([[temp, hum]])
+
+    # Predicción
+    pred = modelo.predict([img_data, iot_data], verbose=0)
+
+    dias = float(pred[0][0])
+    dias= 0 if dias <= 0 else dias
     
-#     # Obtener modelo y scaler
-#     modelo = get_model()
-#     scaler = get_scaler()
-
-#     # Procesar imagen
-#     img_data = preprocess_image(await file.read())
-
-#     # Escalar datos IoT
-#     iot_data = scaler.transform([[temp, hum]])
-
-#     # Predicción
-#     pred = modelo.predict([img_data, iot_data], verbose=0)
-
-#     dias = float(pred[0][0])
-#     dias= 0 if dias <= 0 else dias
-#     return {
-#         "dias_restantes": 2
-        
-#     }
-#     return {
-#         "dias_restantes": dias,
-#         "estado": "Consumible" if dias > 2 else "Desechar"
-#     }
+    return {
+        "dias_restantes": dias,
+        "estado": "Consumible" if dias > 2 else "Desechar"
+    }
 
 # Correr con: uvicorn app.main:app --reload
