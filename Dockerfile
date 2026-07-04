@@ -24,16 +24,8 @@ RUN python train_model.py
 
 # 4. Copiar el resto del código si es necesario
 COPY . .
-
-# 5. Comando de inicio
-CMD ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000"]
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copiar el código y modelos
-COPY . .
-
-# Exponer el puerto
-EXPOSE 8000
+# Variable importante para Render
+ENV PYTHONUNBUFFERED=1
 
 # Comando para iniciar con Gunicorn (más robusto que Uvicorn solo)
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app.main:app", "--bind", "0.0.0.0:8000"]
+CMD ["sh", "-c", "gunicorn main:app -k uvicorn.workers.UvicornWorker --workers 1 --bind 0.0.0.0:$PORT"]
