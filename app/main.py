@@ -78,10 +78,9 @@ from fastapi.middleware.cors import CORSMiddleware
 #         "estado": "Consumible" if dias > 2 else "Desechar"
 #     }
 
-app = FastAPI()
 
 @app.post("/test")
-async def test(nombre: str):
+async def test(nombre: str = Form(...)):
     return {
         "mensaje": f"Hola {nombre}",
         "recibido": nombre
