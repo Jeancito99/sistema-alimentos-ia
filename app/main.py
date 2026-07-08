@@ -1,34 +1,38 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form
 import tensorflow as tf
 import numpy as np
 import cv2
 import os
 
-app = FastAPI(title="Food API")
+app = FastAPI(title="Food API Segura")
 
-# 1. Cargar el modelo .h5
-MODEL_PATH = 'models/model.h5'
-if os.path.exists(MODEL_PATH):
-    model = tf.keras.models.load_model(MODEL_PATH)
-    print("Modelo model.h5 cargado exitosamente.")
-else:
-    model = None
-    print(f"¡Alerta! No se encontró el archivo '{MODEL_PATH}' en el directorio actual.")
+# Intentar cargar el modelo .h5 al iniciar
+MODEL_PATH = 'model.h5'
+model = None
+model_error_msg = None
 
-# Función para preprocesar la imagen
+try:
+    if os.path.exists(MODEL_PATH):
+        model = tf.keras.models.load_model(MODEL_PATH)
+        print("Modelo model.h5 cargado exitosamente.")
+    else:
+        model_error_msg = "Archivo 'model.h5' no encontrado en el servidor."
+except Exception as e:
+    model_error_msg = f"Error al cargar el archivo .h5: {str(e)}"
+    print(model_error_msg)
+
+
 def preprocess_image(file_bytes, target_size=(224, 224)):
-    # Leer la imagen desde los bytes en memoria
     np_img = np.frombuffer(file_bytes, np.uint8)
     img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
-    
     if img is None:
-        raise ValueError("El archivo enviado no es una imagen válida o está dañado.")
-        
-    # Redimensionar y normalizar (0 a 1)
+        raise ValueError("El archivo enviado no pudo ser decodificado como una imagen válida.")
+    
     img = cv2.resize(img, target_size)
     img = img / 255.0
-    img = np.expand_dims(img, axis=0)  # Añadir dimensión de batch (1, H, W, C)
+    img = np.expand_dims(img, axis=0)
     return img
+
 
 @app.post("/api/predict")
 async def predict_food_status(
@@ -36,35 +40,47 @@ async def predict_food_status(
     humedad: float = Form(...),
     temperatura: float = Form(...)
 ):
-    try:
-        # Leer los bytes del archivo subido de forma asíncrona
-        file_bytes = await imagen.read()
-        
-        # Preprocesar la imagen recibida
-        processed_img = preprocess_image(file_bytes)
+    # Estructura base de la respuesta que siempre se enviará a Laravel
+    response_data = {
+        "success": False,
+        "dias_restantes": 0,
+        "estado": "Desechar",
+        "error": None
+    }
 
-        # Preparar los datos numéricos como un arreglo de NumPy
+    try:
+        # 1. Verificar si el modelo cargó correctamente al inicio
+        if model is None:
+            response_data["error"] = f"El modelo de IA no está disponible. Motivo: {model_error_msg}"
+            # Modo contingencia: devolvemos una predicción genérica basada en reglas básicas
+            response_data["dias_restantes"] = 3 if temperatura < 25 else 1
+            response_data["estado"] = "Consumible" if response_data["dias_restantes"] > 2 else "Desechar"
+            return response_data
+
+        # 2. Procesamiento de la imagen
+        file_bytes = await imagen.read()
+        processed_img = preprocess_image(file_bytes)
         numeric_features = np.array([[humedad, temperatura]], dtype=np.float32)
 
-        # 2. Realizar la predicción
-        if model is not None:
-            # Flujo Multi-Input: [imagen, datos_numericos]
-            prediction = model.predict([processed_img, numeric_features])
-            dias = int(np.round(prediction[0][0]))
-        else:
-            # Caso de prueba por si el modelo no carga en el despliegue
-            dias = 3  
+        # 3. Predicción (Bloque crítico de memoria)
+        # Si aquí el servidor se queda sin RAM por culpa de TensorFlow, Render tirará la conexión.
+        prediction = model.predict([processed_img, numeric_features])
+        
+        # Procesar resultado
+        dias = int(np.round(prediction[0][0]))
+        dias = max(0, dias)  # Evitar números negativos
 
-        # Evitar días negativos por ruido del modelo
-        dias = max(0, dias)
+        # 4. Respuesta exitosa
+        response_data["success"] = True
+        response_data["dias_restantes"] = dias
+        response_data["estado"] = "Consumible" if dias > 2 else "Desechar"
+        return response_data
 
-        # 3. Formatear la respuesta JSON tal como la solicitaste
-        return {
-            "dias_restantes": dias,
-            "estado": "Consumible" if dias > 2 else "Desechar"
-        }
-
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno en la predicción: {str(e)}")
+        # Captura cualquier error en tiempo de ejecución (ej. dimensiones incorrectas, fallos de formato)
+        response_data["success"] = False
+        response_data["error"] = f"Error en el procesamiento interno de la API: {str(e)}"
+        # Fallback seguro para que Laravel no muestre un error de sistema de cara al usuario
+        response_data["dias_restantes"] = 0
+        response_data["estado"] = "Desechar"
+        return response_data
