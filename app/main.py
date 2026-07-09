@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import os
 
-app = FastAPI(title="Food API Segura")
+app = FastAPI(title="Food API Adaptada")
 
 # Intentar cargar el modelo .h5 al iniciar
 MODEL_PATH = 'model.h5'
@@ -34,13 +34,14 @@ def preprocess_image(file_bytes, target_size=(224, 224)):
     return img
 
 
-@app.post("/api/predict")
+# Ruta cambiada a /predict para coincidir con tu Laravel
+@app.post("/predict")
 async def predict_food_status(
-    imagen: UploadFile = File(...),
-    humedad: float = Form(...),
-    temperatura: float = Form(...)
+    file: UploadFile = File(...),  # Cambiado de 'imagen' a 'file'
+    temp: float = Form(...),       # Cambiado de 'temperatura' a 'temp'
+    hum: float = Form(...)         # Cambiado de 'humedad' a 'hum'
 ):
-    # Estructura base de la respuesta que siempre se enviará a Laravel
+    # Estructura base de la respuesta JSON
     response_data = {
         "success": False,
         "dias_restantes": 0,
@@ -52,35 +53,33 @@ async def predict_food_status(
         # 1. Verificar si el modelo cargó correctamente al inicio
         if model is None:
             response_data["error"] = f"El modelo de IA no está disponible. Motivo: {model_error_msg}"
-            # Modo contingencia: devolvemos una predicción genérica basada en reglas básicas
-            response_data["dias_restantes"] = 3 if temperatura < 25 else 1
+            # Contingencia: predicción genérica basada en reglas básicas
+            response_data["dias_restantes"] = 3 if temp < 25 else 1
             response_data["estado"] = "Consumible" if response_data["dias_restantes"] > 2 else "Desechar"
             return response_data
 
-        # 2. Procesamiento de la imagen
-        file_bytes = await imagen.read()
+        # 2. Procesamiento de la imagen usando el parámetro 'file'
+        file_bytes = await file.read()
         processed_img = preprocess_image(file_bytes)
-        numeric_features = np.array([[humedad, temperatura]], dtype=np.float32)
+        numeric_features = np.array([[hum, temp]], dtype=np.float32)
 
-        # 3. Predicción (Bloque crítico de memoria)
-        # Si aquí el servidor se queda sin RAM por culpa de TensorFlow, Render tirará la conexión.
+        # 3. Predicción
         prediction = model.predict([processed_img, numeric_features])
         
-        # Procesar resultado
+        # Procesar resultado del modelo
         dias = int(np.round(prediction[0][0]))
         dias = max(0, dias)  # Evitar números negativos
 
-        # 4. Respuesta exitosa
+        # 4. Respuesta exitosa en limpio
         response_data["success"] = True
         response_data["dias_restantes"] = dias
         response_data["estado"] = "Consumible" if dias > 2 else "Desechar"
         return response_data
 
     except Exception as e:
-        # Captura cualquier error en tiempo de ejecución (ej. dimensiones incorrectas, fallos de formato)
+        # Captura cualquier error en tiempo de ejecución
         response_data["success"] = False
         response_data["error"] = f"Error en el procesamiento interno de la API: {str(e)}"
-        # Fallback seguro para que Laravel no muestre un error de sistema de cara al usuario
         response_data["dias_restantes"] = 0
         response_data["estado"] = "Desechar"
         return response_data
