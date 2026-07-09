@@ -45,7 +45,7 @@ def load_and_preprocess_image(path):
 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (128, 128))
-    return img / 255.0/ 255.0
+    return img / 255.0
 
 # =========================
 # CARGAR IMÁGENES
